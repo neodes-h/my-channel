@@ -51,14 +51,23 @@ impl<T> Sender<T> {
 
 pub struct Receiver<T> {
     shared: Arc<Shared<T>>,
+    buffer: VecDeque<T>,
 }
 
 impl<T> Receiver<T> {
     pub fn recv(&mut self) -> Option<T> {
+        if !self.buffer.is_empty() {
+            return self.buffer.pop_front();
+        }
         let mut inner = self.shared.inner.lock().unwrap();
         loop {
             match inner.queue.pop_front() {
-                Some(t) => return Some(t),
+                Some(t) => {
+                    if !inner.queue.is_empty() {
+                        std::mem::swap(&mut self.buffer, &mut inner.queue);
+                    }
+                    return Some(t);
+                }
                 None if inner.sender < 1 => return None,
                 // if queue is empty, put this thread to sleep until it is waken up by the sender
                 // thread using Condvar.
@@ -105,6 +114,7 @@ pub fn channel<T>() -> (Sender<T>, Receiver<T>) {
         },
         Receiver {
             shared: shared.clone(),
+            buffer: VecDeque::default(),
         },
     )
 }
