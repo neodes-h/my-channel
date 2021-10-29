@@ -71,6 +71,14 @@ impl<T> Receiver<T> {
     }
 }
 
+impl<T> Iterator for Receiver<T> {
+    type Item = T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.recv()
+    }
+}
+
 struct Inner<T> {
     queue: VecDeque<T>,
     sender: usize,
@@ -103,7 +111,7 @@ pub fn channel<T>() -> (Sender<T>, Receiver<T>) {
 
 #[cfg(test)]
 mod test {
-    use super::{channel, Receiver, Sender};
+    use super::channel;
 
     #[test]
     fn ping_pong() {
@@ -113,9 +121,20 @@ mod test {
     }
 
     #[test]
-    fn close() {
+    fn closed_tx() {
         let (sender, mut receiver) = channel::<()>();
         drop(sender);
         assert_eq!(receiver.recv(), None);
+    }
+
+    #[test]
+    fn iterate() {
+        let (mut sender, mut receiver) = channel();
+        sender.send(1);
+        sender.send(2);
+        assert_eq!(receiver.next(), Some(1));
+        assert_eq!(receiver.next(), Some(2));
+        drop(sender);
+        assert_eq!(receiver.next(), None);
     }
 }
