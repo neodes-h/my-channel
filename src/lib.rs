@@ -76,8 +76,8 @@ pub fn channel<T>() -> (Sender<T>, Receiver<T>) {
 mod test {
     use super::{channel, Receiver, Sender};
     #[test]
-    fn test_functionality() {
-        let (mut sender, mut receiver) = channel::<i32>();
+    fn ping_pong() {
+        let (mut sender, mut receiver) = channel();
         sender.send(3);
         assert_eq!(receiver.recv(), 3);
     }
