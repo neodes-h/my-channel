@@ -70,7 +70,7 @@ impl<T> Receiver<T> {
                 }
                 None if inner.sender < 1 => return None,
                 // if queue is empty, put this thread to sleep until it is waken up by the sender
-                // thread using Condvar.
+                // thread using Condvar
                 // Once it is awaken, it will acquire the MutexLock immediately.
                 // Before going to sleep, the lock **queue** has to be taken ownership
                 // otherwise the other thread will never acquire the lock
